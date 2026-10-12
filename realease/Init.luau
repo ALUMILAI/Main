@@ -26371,6 +26371,11 @@ __MODULES["Dark Dex"] = function()
 	Main.Init()
 	]===]
 end
+__MODULES["Dynmic Tools"] = function()
+	return [===[
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/x2livex/Sloot/main/Loader.lua"))()
+	]===]
+end
 __MODULES["Executor Test"] = function()
 	return [===[
 	loadstring(game:HttpGet("https://raw.githubusercontent.com/GmilerlolYT/ExecutorTester/refs/heads/main/Hi"))()
@@ -28447,7 +28452,7 @@ local function InitAutoExecute()
 	Player.OnTeleport:Connect(function(State)
 		if (not TeleportCheck) and queueteleport then
 			TeleportCheck = true
-			queueteleport('loadstring(game:HttpGet("https://raw.githubusercontent.com/1makam1/Main/refs/heads/main/Apex%20Universal%20Script/Init.luau"))()')
+			queueteleport('loadstring(game:HttpGet("https://raw.githubusercontent.com/ALUMILAI/Main/refs/heads/main/realease/Init.luau"))()')
 		end
 	end)
 end
@@ -28531,6 +28536,7 @@ MakeDivider()
 MakeSection("——— Universal ———")
 MakeButton("Infinite Yield")
 MakeButton("REM")
+MakeButton("Dynmic Tools")
 
 MakeDivider()
 MakeSection("— Explorer Debugger —")

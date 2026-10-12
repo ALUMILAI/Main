@@ -189,6 +189,7 @@ MakeDivider()
 MakeSection("——— Universal ———")
 MakeButton("Infinite Yield")
 MakeButton("REM")
+MakeButton("Dynmic Tools")
 
 MakeDivider()
 MakeSection("— Explorer Debugger —")
