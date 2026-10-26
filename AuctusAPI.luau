@@ -335,17 +335,16 @@ end
 -- ═══════════════════════════════════════════════════════════════
 -- 🪟 UI LIBRARY
 -- ═══════════════════════════════════════════════════════════════
-type Library = "Cassade" | "Fluent" | "WindUi"
+type Library = "Cassade" | "WindUI"
 
--- cassade
-local CascadeLibrary = loadstring(game:HttpGet("https://github.com/biggaboy212/Cascade/releases/latest/download/dist.luau"))()
-
+-- cassade (lazy: the library is fetched when the first Cassade app is created)
 local Cassade = {}
 Cassade.__index = Cassade
 
 type property = {[string]: any}
 
 function Cassade.new(title: string, collection: {any})
+    local CascadeLibrary = loadstring(game:HttpGet("https://github.com/biggaboy212/Cascade/releases/latest/download/dist.luau"))()
     --══════════════ cassade method ══════════════════════
     local self = setmetatable({}, Cassade)
     self.collection = collection
@@ -545,342 +544,347 @@ function Cassade:Row(rowId: string, formId: string, title: string, subtitle: str
 end
 
 
--- WindUI
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
-local ConfigManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/1makam1/Main/refs/heads/main/ConfigManager.luau"))()
-WindUI:SetNotificationLower(true)
+-- WindUI (lazy: fetched only when a WindUI app is created)
+local WindUIModule: any? = nil
 
-local WindUIClass = {}
-WindUIClass.__index = WindUIClass
-
-function WindUIClass.new(customProperty: {[string]: any}, services: {[string]: {any}})
-    local windowProperty = {
-        Title = "None",
-        Icon = "rbxassetid://99869488000539",
-        Author = "Apex Hub Fremium",
-        Folder = "Apex None",
-
-        -- Optional
-        Size = UDim2.fromOffset(580, 460),
-        MinSize = Vector2.new(560, 350),
-        MaxSize = Vector2.new(850, 560),
-        ToggleKey = Enum.KeyCode.RightControl,
-        Transparent = true,
-        Theme = "Dark",
-        Resizable = true,
-        SideBarWidth = 150,
-        BackgroundImageTransparency = 0.42,
-        HideSearchBar = false,
-        ScrollBarEnabled = true,
-
-        -- Optional
-        -- KeySystem = { 
-        --     Note = "Get key from link to continue.",
-        --     SaveKey = true,
-        --     API = {{Type = "Lootlabs"}}
-        -- }
-    }
-    for prop, value in customProperty do
-        windowProperty[prop] = value
+local function getWindUI(): any
+    if not WindUIModule then
+        WindUIModule = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+        WindUIModule:SetNotificationLower(true)
     end
-    for serviceName, service in services do
-        WindUI.Services[serviceName] = service
+    return WindUIModule
+end
+
+local WindUIApp = {}
+WindUIApp.__index = WindUIApp
+
+-- Apex defaults, every field overridable through windowProperty
+local DEFAULT_WINDOW: property = {
+    Title = "None",
+    Icon = "rbxassetid://99869488000539",
+    Author = "Apex Hub Fremium",
+    Folder = "Apex Hub",
+    Size = UDim2.fromOffset(580, 460),
+    MinSize = Vector2.new(560, 350), -- WindUI clamps Size against MinSize.X/MaxSize.X as numbers
+    MaxSize = Vector2.new(850, 560),
+    Position = UDim2.fromOffset(20, 20),
+    Theme = "Crimson",
+    ToggleKey = Enum.KeyCode.LeftAlt,
+    Transparent = true,
+    Resizable = true,
+    SideBarWidth = 150,
+    BackgroundImageTransparency = 0.42,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+}
+
+-- kinds whose value fits in the settings JSON and can bind to a Settings key
+local BINDABLE: {[string]: boolean} = {
+    Toggle = true,
+    Slider = true,
+    Input = true,
+    Dropdown = true,
+    Keybind = true,
+}
+
+local function initialValue(kind: string, property: property, saved: any): any
+    if kind == "Slider" then
+        local base = property.Value or {}
+        return {
+            Min = base.Min or 0,
+            Max = base.Max or 100,
+            Default = if saved ~= nil then saved else (base.Default or base.Min or 0),
+        }
     end
-
-    local Window = WindUI:CreateWindow(windowProperty)
-
-    function Window:CreateElement(elementId: string, object: {any}, method: string, ...: any)
-        self[elementId] = object[method](object, ...)
+    if saved ~= nil then
+        return saved
     end
+    if kind == "Input" then
+        return property.Value or ""
+    elseif kind == "Toggle" then
+        return property.Value or false
+    end
+    return property.Value
+end
 
-    function Window:SetSearchEnabled(enable: boolean)
-        self.HideSearchBar = not enable
-        for _, c in self.Parent:GetChildren() do
-            local childCount = #c:GetChildren()
-            if childCount < 3 then continue end
-            for _, c2 in c.Main:GetChildren() do
-                if not c2:FindFirstChild("ScrollingFrame") then continue end
-                c2.ScrollingFrame.Size = UDim2.new(1, 0, 1, enable and -45 or 0)
-                c2.TextButton.Visible = enable
-                return
-            end
+-- windowProperty: WindUI CreateWindow props (merged over the Apex defaults)
+-- hub: engine table with hub.Settings (proxy with optional .Changed signal);
+--       without it, elements simply never use Setting=
+-- returns app, WindUI, Window
+function WindUIApp.new(windowProperty: property?, hub: any?)
+    local WindUI = getWindUI()
+
+    local props: property = table.clone(DEFAULT_WINDOW)
+    if windowProperty then
+        for key, value in windowProperty do
+            props[key] = value
         end
     end
 
-    function Window:SetScrollBarEnabled(enable: boolean)
-        self.ScrollBarVisible = enable
-        for _, c in self.Parent:GetChildren() do
-            local childCount = #c:GetChildren()
-            if childCount < 3 then continue end
-            for _, c2 in c.Main:GetChildren() do
-                if not c2:FindFirstChild("Background") then continue end
-                task.spawn(function()
-                    for _, c3 in c2:WaitForChild("Frame"):GetChildren() do
-                        childCount = #c3:GetChildren()
-                        if childCount ~= 1 then continue end
-                        c3.Visible = enable
-                        return
-                    end
-                end)
-                return
-            end
-        end
+    -- KeySystem = true bridges the Apex (Junkie) key into WindUI's native key screen
+    if props.KeySystem == true then
+        props.KeySystem = {
+            Title = "Apex Hub Key",
+            Note = "Get the key from the link, then paste it here.",
+            SaveKey = true,
+            URL = JunkieKeySystem.get_key_link(),
+            KeyValidator = function(key: string): boolean
+                local ok, result = pcall(JunkieKeySystem.check_key, key)
+                return ok and type(result) == "table" and result.valid == true
+            end,
+        }
     end
 
-    function Window:SetResizable(enable: boolean)
-        self.Resizable = enable
-        for _, c in self.Parent:GetChildren() do
-            local childCount = #c:GetChildren()
-            if childCount < 3 then continue end
-            c:FindFirstChild("Background").Frame.Visible = enable
-            return
-        end
-    end
+    local Window = WindUI:CreateWindow(props)
 
-    Window.ConfigManager = ConfigManager
-    Window.ConfigManager:Init(Window)
-    Window:SetSearchEnabled(false)
-    Window:SetScrollBarEnabled(false)
-    Window:SetResizable(true)
     Window:SetIconSize(40)
-    WindUI:SetTheme("Crimson")
-    Window:SetToggleKey(Enum.KeyCode.LeftAlt)
     Window:EditOpenButton({
         Title = "Apex Hub",
         Icon = "rbxassetid://99869488000539",
-        CornerRadius = UDim.new(0,16),
+        CornerRadius = UDim.new(0, 16),
         StrokeThickness = 1.5,
-        Color = ColorSequence.new(
-            Color3.fromRGB(150, 0, 0)
-        ),
+        Color = ColorSequence.new(Color3.fromRGB(150, 0, 0)),
         OnlyMobile = false,
         Enabled = true,
         Draggable = true,
     })
 
-    local self = setmetatable({}, WindUIClass)
+    local self = setmetatable({}, WindUIApp)
     self.Window = Window
     self.WindUI = WindUI
-    self.ConfigManager = ConfigManager
+    self.Hub = hub
+    self.Elements = {}
+    self.Containers = {}
+    self.Bindings = {}
+    self._syncing = false
+    self.Destroyed = false
+
+    -- reverse sync: Settings changed from code -> update the bound elements
+    if hub and hub.Settings and hub.Settings.Changed and hub.Settings.Changed.Connect then
+        self._changedConn = hub.Settings.Changed:Connect(function(key: any, value: any)
+            self:_applySetting(key, value)
+        end)
+    end
 
     return self, WindUI, Window
 end
 
-function WindUIClass:WindowConfigTab(windowOrTabsection: any)
-    local Window = self.Window
-
-    -- tab
-    Window:CreateElement("WindowSettingsTab", windowOrTabsection, "Tab", {
-        Title = "Window",
-        Icon = "app-window",
-    })
-
-    -- Config
-    Window:CreateElement("ConfigSection", Window.WindowSettingsTab, "Section", { 
-        Title = "Config",
-        Box = true,
-        TextTransparency = 0.3,
-        TextXAlignment = "Center",
-        TextSize = 20,
-        Opened = true,
-    })
-    Window:CreateElement("ConfigNamText", Window.ConfigSection, "Input", {
-        Title = "Config Name",
-        Placeholder = "Config...",
-    })
-    Window:CreateElement("SaveConfigBtn", Window.ConfigSection, "Button", {
-        Title = "Save Config",
-        Callback = function()
-            local configName = Window.ConfigNamText.Value
-            if configName == "" then return end
-            local config = Window.ConfigManager:GetConfig(configName)
-            local running
-            if config then
-                running = coroutine.running()
-                Window:Dialog({
-                    Icon = "info",
-                    Title = "This config already exist, do you want to replace?",
-                    Content = 'Click "Replace" to save the config.',
-                    Buttons = {
-                        {
-                            Title = "Cancel",
-                            Variant = "Secondary",
-                            Callback = function() task.spawn(running, false) end
-                        },
-                        {
-                            Title = "Replace",
-                            Callback = function() task.spawn(running, true) end
-                        }
-                    }
-                })
-            end
-            local canSave = if running then coroutine.yield() else true
-            if not canSave then return end
-            config = Window.ConfigManager:Config(configName)
-            config:Set("Theme", WindUI:GetCurrentTheme())
-            config:Set("Transparent", WindUI:GetTransparency())
-            config:Set("MinimizeKey", tostring(Window.ToggleKey):sub(14))
-            config:Set("SearchBarEnabled", not Window.HideSearchBar)
-            config:Set("ScrollBarEnabled", Window.ScrollBarVisible)
-            config:Set("Resizable", Window.Resizable)
-            config:Save()
-            local allConfigs = {}
-            for _config, _ in Window.ConfigManager.Configs do
-                table.insert(allConfigs, _config)
-            end
-            Window.ConfigDropdown:Refresh(allConfigs)
-        end
-    })
-    Window:CreateElement("ConfigDropdown", Window.ConfigSection, "Dropdown", {
-        Title = "Select Config",
-        Values = (function()
-            local allConfigs = {}
-            for _config, _ in Window.ConfigManager.Configs do
-                table.insert(allConfigs, _config)
-            end
-            return allConfigs
-        end)(),
-        Callback = function() return end
-    })
-    Window:CreateElement("LoadConfigBtn", Window.ConfigSection, "Button", {
-        Title = "Load Config",
-        Callback = function()
-            local configName = Window.ConfigDropdown.Value
-            if not configName then return end
-            if configName == "" then return end
-            local config = Window.ConfigManager:GetConfig(configName)
-            if not config then return end
-            local settings = config.CustomData
-            WindUI:SetTheme(settings.Theme)
-            Window.ThemeDropdown:Select(settings.Theme)
-            Window:ToggleTransparency(settings.Transparent)
-            Window.TransparentToggle:Set(settings.Transparent)
-            Window:SetToggleKey(Enum.KeyCode[settings.MinimizeKey or "RightControl"])
-            Window.MinimizeKeyKeyBind:Set(settings.MinimizeKey or "RightControl")
-            Window:SetSearchEnabled(settings.SearchBarEnabled)
-            Window.SearchBarToggle:Set(settings.SearchBarEnabled)
-            Window:SetScrollBarEnabled(settings.ScrollBarEnabled)
-            Window.ScrollBarToggle:Set(settings.ScrollBarEnabled)
-            Window:SetResizable(settings.Resizable)
-            Window.ResizableToggle:Set(settings.Resizable)
-        end
-    })
-    Window:CreateElement("DelConfigBtn", Window.ConfigSection, "Button", {
-        Title = "Delete Config",
-        Callback = function()
-            local configName = Window.ConfigDropdown.Value
-            if not configName then return end
-            if configName == "" then return end
-            local config = Window.ConfigManager:GetConfig(configName)
-            if not config then return end
-            Window:Dialog({
-                Icon = "info",
-                Title = "Are you sure you want to delete this config!",
-                Content = 'Click "Confirm" to delete the config.',
-                Buttons = {
-                    {
-                        Title = "Cancel",
-                        Variant = "Secondary",
-                        Callback = function() return end
-                    },
-                    {
-                        Title = "Confirm",
-                        Callback = function()
-                            config:Delete()
-                            local allConfigs = {}
-                            for _config, _ in Window.ConfigManager.Configs do
-                                table.insert(allConfigs, _config)
-                            end
-                            Window.ConfigDropdown:Refresh(allConfigs)
-                            Window.ConfigDropdown:Select()
-                        end
-                    }
-                }
-            })
-        end
-    })
-
-    -- Apearence
-    Window:CreateElement("AppearanceSection", Window.WindowSettingsTab, "Section", { 
-        Title = "Appearance",
-        Box = true,
-        TextTransparency = 0.3,
-        TextXAlignment = "Center",
-        TextSize = 20,
-        Opened = true,
-    })
-    Window:CreateElement("ThemeDropdown", Window.AppearanceSection, "Dropdown", {
-        Title = "Theme",
-        Values = (function()
-            local themes = {}
-            for theme, _ in WindUI:GetThemes() do
-                table.insert(themes, theme)
-            end
-            return themes
-        end)(),
-        Value = WindUI:GetCurrentTheme(),
-        Callback = function(option) 
-            WindUI:SetTheme(option)
-        end
-    })
-    Window:CreateElement("TransparentToggle", Window.AppearanceSection, "Toggle", {
-        Title = "Transparent",
-        Value = WindUI:GetTransparency(),
-        Callback = function(state)
-            Window:ToggleTransparency(state)
-        end
-    })
-
-    -- Window
-    Window:CreateElement("WindowSection", Window.WindowSettingsTab, "Section", { 
-        Title = "Window",
-        Box = true,
-        TextTransparency = 0.3,
-        TextXAlignment = "Center",
-        TextSize = 20,
-        Opened = true,
-    })
-    Window:CreateElement("MinimizeKeyKeyBind", Window.WindowSection, "Keybind", {
-        Title = "Minimize Key",
-        Value = tostring(Window.ToggleKey):sub(14),
-        Callback = function(key)
-            Window:SetToggleKey(Enum.KeyCode[key])
-        end
-    })
-    Window:CreateElement("SearchBarToggle", Window.WindowSection, "Toggle", {
-        Title = "Search Bar Enabled",
-        Value = not Window.HideSearchBar,
-        Callback = function(...)
-            Window:SetSearchEnabled(...)
-        end
-    })
-    Window:CreateElement("ScrollBarToggle", Window.WindowSection, "Toggle", {
-        Title = "Scroll Bar Enabled",
-        Value = Window.ScrollBarVisible,
-        Callback = function(...)
-            Window:SetScrollBarEnabled(...)
-        end
-    })
-    Window:CreateElement("ResizableToggle", Window.WindowSection, "Toggle", {
-        Title = "Resizable",
-        Value = Window.Resizable,
-        Callback = function(...)
-            Window:SetResizable(...)
-        end
-    })
+function WindUIApp:Sidebar(id: string, property: property?)
+    if self.Containers[id] then
+        error(("[WindUI] duplicate id '%s'"):format(id), 2)
+    end
+    local section = self.Window:Section(property or {Title = id})
+    self.Containers[id] = {Object = section, Elements = false}
+    return section
 end
 
+function WindUIApp:Tab(id: string, sidebarId: string?, property: property?)
+    if self.Containers[id] then
+        error(("[WindUI] duplicate id '%s'"):format(id), 2)
+    end
+    local tab
+    if sidebarId then
+        local sidebar = self.Containers[sidebarId]
+        if not sidebar or sidebar.Elements then
+            error(("[WindUI] '%s' is not a Sidebar for tab '%s'"):format(tostring(sidebarId), id), 2)
+        end
+        tab = sidebar.Object:Tab(property or {Title = id})
+    else
+        tab = self.Window:Tab(property or {Title = id})
+    end
+    self.Containers[id] = {Object = tab, Elements = true}
+    return tab
+end
 
--- fluent
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+function WindUIApp:Section(id: string, parentId: string, property: property?)
+    if self.Containers[id] then
+        error(("[WindUI] duplicate id '%s'"):format(id), 2)
+    end
+    local parent = self.Containers[parentId]
+    if not parent or not parent.Elements then
+        error(("[WindUI] unknown Tab/Section '%s' for section '%s'"):format(tostring(parentId), id), 2)
+    end
+    local section = parent.Object:Section(property or {Title = id})
+    self.Containers[id] = {Object = section, Elements = true}
+    return section
+end
+
+-- Setting = "Key" on a bindable element:
+--   initial value <- hub.Settings[Key]
+--   Callback      -> hub.Settings[Key] = value   (settings proxy persists it)
+--   Settings.Changed from code -> element:Set/Select (guarded against loops)
+function WindUIApp:_element(kind: string, id: string, parentId: string, property: property?)
+    local container = self.Containers[parentId]
+    if not container then
+        error(("[WindUI] unknown parent '%s' for element '%s'"):format(tostring(parentId), id), 2)
+    end
+    if not container.Elements then
+        error(("[WindUI] '%s' cannot contain elements"):format(parentId), 2)
+    end
+    if self.Elements[id] then
+        error(("[WindUI] duplicate element id '%s'"):format(id), 2)
+    end
+
+    property = property or {}
+    local key = property.Setting
+    if key ~= nil then
+        property.Setting = nil
+        if not BINDABLE[kind] then
+            error(("[WindUI] '%s': Setting= is not supported on %s"):format(id, kind), 2)
+        end
+        local hub = self.Hub
+        if not hub or not hub.Settings then
+            error(("[WindUI] '%s': Setting='%s' requires CreateApp(..., hub) with hub.Settings"):format(id, tostring(key)), 2)
+        end
+        local saved = hub.Settings[key]
+        property.Value = initialValue(kind, property, saved)
+        local userCallback = property.Callback
+        property.Callback = function(value: any)
+            if not self._syncing then
+                hub.Settings[key] = value
+            end
+            if userCallback then
+                userCallback(value)
+            end
+        end
+    end
+
+    local element = container.Object[kind](container.Object, property)
+    self.Elements[id] = element
+
+    if key ~= nil then
+        local list = self.Bindings[key]
+        if not list then
+            list = {}
+            self.Bindings[key] = list
+        end
+        table.insert(list, {Element = element, Kind = kind})
+    end
+
+    return element
+end
+
+function WindUIApp:_applySetting(key: any, value: any)
+    local list = self.Bindings[key]
+    if not list or self.Destroyed then
+        return
+    end
+    self._syncing = true
+    local ok, err = pcall(function()
+        for _, binding in list do
+            if binding.Kind == "Dropdown" then
+                binding.Element:Select(value)
+            else
+                binding.Element:Set(value)
+            end
+        end
+    end)
+    self._syncing = false
+    if not ok then
+        warn(("[WindUI] failed to apply setting '%s': %s"):format(tostring(key), tostring(err)))
+    end
+end
+
+function WindUIApp:Toggle(id: string, parentId: string, property: property?)
+    return self:_element("Toggle", id, parentId, property)
+end
+
+function WindUIApp:Slider(id: string, parentId: string, property: property?)
+    return self:_element("Slider", id, parentId, property)
+end
+
+function WindUIApp:Input(id: string, parentId: string, property: property?)
+    return self:_element("Input", id, parentId, property)
+end
+
+function WindUIApp:Dropdown(id: string, parentId: string, property: property?)
+    return self:_element("Dropdown", id, parentId, property)
+end
+
+function WindUIApp:Button(id: string, parentId: string, property: property?)
+    return self:_element("Button", id, parentId, property)
+end
+
+function WindUIApp:Keybind(id: string, parentId: string, property: property?)
+    return self:_element("Keybind", id, parentId, property)
+end
+
+function WindUIApp:Paragraph(id: string, parentId: string, property: property?)
+    return self:_element("Paragraph", id, parentId, property)
+end
+
+function WindUIApp:Colorpicker(id: string, parentId: string, property: property?)
+    return self:_element("Colorpicker", id, parentId, property)
+end
+
+function WindUIApp:ProgressBar(id: string, parentId: string, property: property?)
+    return self:_element("ProgressBar", id, parentId, property)
+end
+
+function WindUIApp:Divider(id: string, parentId: string, property: property?)
+    return self:_element("Divider", id, parentId, property)
+end
+
+function WindUIApp:Space(id: string, parentId: string, property: property?)
+    return self:_element("Space", id, parentId, property)
+end
+
+function WindUIApp:Image(id: string, parentId: string, property: property?)
+    return self:_element("Image", id, parentId, property)
+end
+
+function WindUIApp:Get(id: string): any
+    return self.Elements[id]
+end
+
+function WindUIApp:Notify(property: {[string]: any})
+    self.WindUI:Notify(property)
+end
+
+function WindUIApp:Dialog(property: {[string]: any})
+    return self.Window:Dialog(property)
+end
+
+function WindUIApp:OnDestroy(callback: () -> ())
+    self.Window:OnDestroy(callback)
+end
+
+function WindUIApp:Destroy()
+    if self.Destroyed then
+        return
+    end
+    self.Destroyed = true
+    if self._changedConn then
+        self._changedConn:Disconnect()
+        self._changedConn = nil
+    end
+    self.Window:Destroy()
+end
 
 -- Constructor
 function AuctusAPI.CreateApp(library: Library, ...)
     local constructors = {
         Cassade = Cassade.new,
-        WindUI = WindUIClass.new
+        WindUI = WindUIApp.new
     }
-    return constructors[library](...)
+    local constructor = constructors[library]
+    if not constructor then
+        error(("[AuctusAPI] unknown library '%s'"):format(tostring(library)), 2)
+    end
+    return constructor(...)
+end
+
+-- ═══════════════════════════════════════════════════════════════
+-- 🧹 TROVE (lazy: fetched on first use)
+-- ═══════════════════════════════════════════════════════════════
+local TroveClass: any? = nil
+
+--- Fresh Trove instance for tracking connections, threads and instances.
+function AuctusAPI.NewTrove()
+    if not TroveClass then
+        TroveClass = loadstring(game:HttpGet("https://raw.githubusercontent.com/1makam1/Main/refs/heads/main/Utility/Trove.luau"))()
+    end
+    return TroveClass.new()
 end
 
 -- ═══════════════════════════════════════════════════════════════
