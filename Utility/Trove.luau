@@ -293,7 +293,11 @@ function Trove:Clean()
 	end
 	self._cleaning = true
 	for _, obj in self._objects do
-		self:_cleanupObject(obj[1], obj[2])
+		-- one failing object must not strand the rest or brick every future Clean
+		local ok, err = pcall(self._cleanupObject, self, obj[1], obj[2])
+		if not ok then
+			warn("[Trove] cleanup failed:", err)
+		end
 	end
 	table.clear(self._objects)
 	self._cleaning = false
