@@ -845,6 +845,23 @@ function WindUIApp:Dialog(property: {[string]: any})
     return self.Window:Dialog(property)
 end
 
+-- the TextBox is the truth: an Input element's own Callback only runs once it loses focus
+function WindUIApp:InputText(element: any): string
+    local ok, box = pcall(function()
+        return element.InputFrame.UIElements.Main:FindFirstChildWhichIsA("TextBox", true)
+    end)
+    return ok and box and box.Text or element.Value
+end
+
+-- RichText reads < > & as markup, and names and messages are free text
+function WindUIApp:Escape(text: string): string
+    return (text:gsub("[&<>]", {
+        ["&"] = "&amp;",
+        ["<"] = "&lt;",
+        [">"] = "&gt;",
+    }))
+end
+
 function WindUIApp:OnDestroy(callback: () -> ())
     self.Window:OnDestroy(callback)
 end
