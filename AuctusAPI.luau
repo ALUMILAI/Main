@@ -875,19 +875,6 @@ function AuctusAPI.CreateApp(library: Library, ...)
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- 🧹 TROVE (lazy: fetched on first use)
--- ═══════════════════════════════════════════════════════════════
-local TroveClass: any? = nil
-
---- Fresh Trove instance for tracking connections, threads and instances.
-function AuctusAPI.NewTrove()
-    if not TroveClass then
-        TroveClass = loadstring(game:HttpGet("https://raw.githubusercontent.com/1makam1/Main/refs/heads/main/Utility/Trove.luau"))()
-    end
-    return TroveClass.new()
-end
-
--- ═══════════════════════════════════════════════════════════════
 -- 🛠️ UTILITY FUNCTIONS
 -- ═══════════════════════════════════════════════════════════════
 function AuctusAPI.DeepPrint(data: any)
