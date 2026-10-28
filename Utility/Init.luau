@@ -1,6 +1,6 @@
 local Modules = {}
 
-Modules["Extend"] = (function()
+Modules["Extend"] = (function(...)
 	return function<object, attach>(obj: object, objOrInstance: attach): object & attach
 		local cache = {}
 	
@@ -33,7 +33,7 @@ Modules["Extend"] = (function()
 	end
 	
 end)()
-Modules["concur"] = (function()
+Modules["concur"] = (function(...)
 	--!strict
 	
 	-- Concur
@@ -578,7 +578,7 @@ Modules["concur"] = (function()
 	return Concur
 	
 end)()
-Modules["enum-list"] = (function()
+Modules["enum-list"] = (function(...)
 	-- EnumList
 	-- Stephen Leitnick
 	-- January 08, 2021
@@ -682,7 +682,7 @@ Modules["enum-list"] = (function()
 	return EnumList
 	
 end)()
-Modules["find"] = (function()
+Modules["find"] = (function(...)
 	--!strict
 	
 	--[=[
@@ -729,7 +729,7 @@ Modules["find"] = (function()
 	return find
 	
 end)()
-Modules["loader"] = (function()
+Modules["loader"] = (function(...)
 	--[=[
 		@class Loader
 	
@@ -869,7 +869,7 @@ Modules["loader"] = (function()
 	return Loader
 	
 end)()
-Modules["log"] = (function()
+Modules["log"] = (function(...)
 	-- Log
 	-- Stephen Leitnick
 	-- April 20, 2021
@@ -1618,7 +1618,7 @@ Modules["log"] = (function()
 	return Log
 	
 end)()
-Modules["option"] = (function()
+Modules["option"] = (function(...)
 	-- Option
 	-- Stephen Leitnick
 	-- August 28, 2020
@@ -2110,7 +2110,7 @@ Modules["option"] = (function()
 	}
 	
 end)()
-Modules["pid"] = (function()
+Modules["pid"] = (function(...)
 	--!native
 	
 	export type PID = {
@@ -2308,7 +2308,7 @@ Modules["pid"] = (function()
 	}
 	
 end)()
-Modules["quaternion"] = (function()
+Modules["quaternion"] = (function(...)
 	--!strict
 	
 	--[[
@@ -2881,7 +2881,7 @@ Modules["quaternion"] = (function()
 	}
 	
 end)()
-Modules["query"] = (function()
+Modules["query"] = (function(...)
 	--!strict
 	
 	--[=[
@@ -3001,7 +3001,7 @@ Modules["query"] = (function()
 	return Query
 	
 end)()
-Modules["sequent"] = (function()
+Modules["sequent"] = (function(...)
 	export type Sequent<T> = {
 		Fire: (self: Sequent<T>, T) -> (),
 		Connect: (self: Sequent<T>, callback: (SequentEvent<T>) -> ()) -> SequentConnection,
@@ -3344,7 +3344,7 @@ Modules["sequent"] = (function()
 	})
 	
 end)()
-Modules["shake"] = (function()
+Modules["shake"] = (function(...)
 	--!native
 	
 	local RunService = game:GetService("RunService")
@@ -3879,7 +3879,7 @@ Modules["shake"] = (function()
 	}
 	
 end)()
-Modules["signal"] = (function()
+Modules["signal"] = (function(...)
 	-- -----------------------------------------------------------------------------
 	--               Batched Yield-Safe Signal Implementation                     --
 	-- This is a Signal class which has effectively identical behavior to a       --
@@ -4314,7 +4314,7 @@ Modules["signal"] = (function()
 	})
 	
 end)()
-Modules["spring"] = (function()
+Modules["spring"] = (function(...)
 	--!strict
 	
 	--[=[
@@ -4414,7 +4414,7 @@ Modules["spring"] = (function()
 	return Spring
 	
 end)()
-Modules["stream"] = (function()
+Modules["stream"] = (function(...)
 	--!native
 	--!strict
 	
@@ -5014,7 +5014,7 @@ Modules["stream"] = (function()
 	return table.freeze(stream)
 	
 end)()
-Modules["symbol"] = (function()
+Modules["symbol"] = (function(...)
 	-- Symbol
 	-- Stephen Leitnick
 	-- January 04, 2022
@@ -5073,7 +5073,7 @@ Modules["symbol"] = (function()
 	return Symbol
 	
 end)()
-Modules["table-util"] = (function()
+Modules["table-util"] = (function(...)
 	--!strict
 	
 	-- TableUtil
@@ -6014,7 +6014,7 @@ Modules["table-util"] = (function()
 	return TableUtil
 	
 end)()
-Modules["task-queue"] = (function()
+Modules["task-queue"] = (function(...)
 	-- TaskQueue
 	-- Stephen Leitnick
 	-- November 20, 2021
@@ -6114,7 +6114,7 @@ Modules["task-queue"] = (function()
 	return TaskQueue
 	
 end)()
-Modules["tree"] = (function()
+Modules["tree"] = (function(...)
 	local DELIM = "/"
 	
 	local function FullNameToPath(instance: Instance): string
@@ -6254,7 +6254,7 @@ Modules["tree"] = (function()
 	return Tree
 	
 end)()
-Modules["trove"] = (function()
+Modules["trove"] = (function(...)
 	--!strict
 	
 	local RunService = game:GetService("RunService")
@@ -7044,7 +7044,7 @@ Modules["trove"] = (function()
 	}
 	
 end)()
-Modules["typed-remote"] = (function()
+Modules["typed-remote"] = (function(...)
 	--!strict
 	
 	type Signal<T...> = {
