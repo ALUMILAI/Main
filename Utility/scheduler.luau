@@ -3,22 +3,15 @@
 
 	local scheduler = Scheduler.new(hub)
 	scheduler:Register({ Name = "AutoFarm", Thread = true, Run = function(ctx) ... end })
-	scheduler:Register({ Name = "AutoCollect", Interval = 0.5, Run = function(ctx) ... end })
 	scheduler:Start()
 
 	A task is enabled while hub.Settings[Name] == true, or while Enabled(hub) returns true.
 	Three errors in a row turn a task off; it re-arms once its gate has gone off and on again.
-	scheduler.Interval is the tick: seconds between passes over the tasks (default 0, every frame).
 
 	Task definition
 	  Name       string     unique; also the settings key that switches the task on
 	  Run        function   Run(ctx): called every tick, or once on its own thread when Thread is set
-	  Interval   number?    loop tasks: seconds from the start of one Run to the start of the next. 0 or
-	                        omitted: every tick. Never finer than scheduler.Interval, the tick itself
-	  Cleanup    function?  Cleanup(ctx): once after the task switches off (setting off, preempted, three errors,
-	                        Unregister, Stop) and its trove is cleaned, so ctx.Trove is nil. Undo what Run did
 	  Thread     boolean?   Run owns a thread and ctx.Trove; loop with `while not ctx.Cancelled() do`
-	                        (it waits for itself, so it takes no Interval)
 	  Title      string?    name shown by a UI that lists the task
 	  Group      string?    tasks of a group take turns; only tasks with a Group are listed by :Groups()
 	  Exclusive  boolean?   true: queued in its group (the highest Priority that is Ready runs, the rest wait)
@@ -30,7 +23,6 @@
 	  Server     string?    only runs while hub.SERVER is this name
 
 	ctx = { Hub, Settings, Name, Trove, Cancelled() }
-	A loop task's Run and every Cleanup run inside the tick, so neither may yield; work that waits is a Thread task.
 
 	The user's overrides live in hub.Settings: "Priority:<Name>" (number), "Interruptible:<Name>" (boolean).
 
@@ -87,15 +79,6 @@ function Scheduler:Register(def: any)
 	)
 	if self.Tasks[def.Name] then
 		error(("[Scheduler] duplicate task '%s'"):format(def.Name), 2)
-	end
-	if def.Interval ~= nil and not (type(def.Interval) == "number" and def.Interval >= 0) then
-		error(("[Scheduler] task '%s': Interval is a number of seconds, 0 or more"):format(def.Name), 2)
-	end
-	if def.Interval ~= nil and def.Thread then
-		error(("[Scheduler] task '%s': a Thread task waits for itself, so it takes no Interval"):format(def.Name), 2)
-	end
-	if def.Cleanup ~= nil and type(def.Cleanup) ~= "function" then
-		error(("[Scheduler] task '%s': Cleanup is a function"):format(def.Name), 2)
 	end
 	def._listed = def.Group ~= nil -- only tasks that declared a Group are listed
 	def.Group = def.Group or def.Name
@@ -262,7 +245,7 @@ function Scheduler:_stop(name: string)
 	end
 	self.Active[name] = nil
 	local trove, thread = def._trove, def._thread
-	def._trove, def._thread, def._spawnedAt, def._nextRun = nil, nil, nil, nil
+	def._trove, def._thread, def._spawnedAt = nil, nil, nil
 	if trove then
 		if thread == coroutine.running() then
 			trove:_findAndRemoveFromObjects(thread, false) -- untrack without closing the thread we're inside of
@@ -270,13 +253,6 @@ function Scheduler:_stop(name: string)
 		trove:Clean()
 	end
 	self.Strikes[name] = nil
-	if def.Cleanup then
-		-- the trove is gone, so the ctx has none; a failing Cleanup must not stop the rest from stopping
-		local ok, err = pcall(def.Cleanup, self:_ctx(def))
-		if not ok then
-			warn(("[Scheduler] Cleanup for '%s' errored: %s"):format(name, tostring(err)))
-		end
-	end
 end
 
 function Scheduler:_strike(name: string, err: any)
@@ -359,20 +335,17 @@ function Scheduler:_reconcile(want: { [string]: any })
 	end
 end
 
--- phase 4: run the loop tasks that are due, and clear the strikes of threads that have stayed up
+-- phase 4: run loop tasks, and clear the strikes of threads that have stayed up
 function Scheduler:_run(want: { [string]: any })
-	local now = os.clock()
 	for _, name in ipairs(self.Order) do
 		local def = self.Tasks[name]
 		if def and want[name] and self.Active[name] == def then
 			if def.Thread then
-				if def._spawnedAt and now - def._spawnedAt > HEALTHY_SECONDS then
+				if def._spawnedAt and os.clock() - def._spawnedAt > HEALTHY_SECONDS then
 					self.Strikes[name] = nil
 					def._spawnedAt = nil
 				end
-			elseif def._nextRun == nil or now >= def._nextRun then
-				-- set before the call: when the third error stops the task, _stop clears it again
-				def._nextRun = now + (def.Interval or 0)
+			else
 				local ok, err = pcall(def.Run, self:_ctx(def))
 				if ok then
 					self.Strikes[name] = nil
