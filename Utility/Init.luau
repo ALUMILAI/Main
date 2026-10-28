@@ -1,6 +1,6 @@
 local Modules = {}
 
-Modules["Extend"] = (function(...)
+Modules["Extend"] = function(...)
 	return function<object, attach>(obj: object, objOrInstance: attach): object & attach
 		local cache = {}
 	
@@ -32,8 +32,8 @@ Modules["Extend"] = (function(...)
 		return setmetatable(obj, mt) :: object & attach
 	end
 	
-end)()
-Modules["concur"] = (function(...)
+end
+Modules["concur"] = function(...)
 	--!strict
 	
 	-- Concur
@@ -577,8 +577,8 @@ Modules["concur"] = (function(...)
 	
 	return Concur
 	
-end)()
-Modules["enum-list"] = (function(...)
+end
+Modules["enum-list"] = function(...)
 	-- EnumList
 	-- Stephen Leitnick
 	-- January 08, 2021
@@ -681,8 +681,8 @@ Modules["enum-list"] = (function(...)
 	
 	return EnumList
 	
-end)()
-Modules["find"] = (function(...)
+end
+Modules["find"] = function(...)
 	--!strict
 	
 	--[=[
@@ -728,8 +728,8 @@ Modules["find"] = (function(...)
 	
 	return find
 	
-end)()
-Modules["loader"] = (function(...)
+end
+Modules["loader"] = function(...)
 	--[=[
 		@class Loader
 	
@@ -868,8 +868,8 @@ Modules["loader"] = (function(...)
 	
 	return Loader
 	
-end)()
-Modules["log"] = (function(...)
+end
+Modules["log"] = function(...)
 	-- Log
 	-- Stephen Leitnick
 	-- April 20, 2021
@@ -1617,8 +1617,8 @@ Modules["log"] = (function(...)
 	
 	return Log
 	
-end)()
-Modules["option"] = (function(...)
+end
+Modules["option"] = function(...)
 	-- Option
 	-- Stephen Leitnick
 	-- August 28, 2020
@@ -2109,8 +2109,8 @@ Modules["option"] = (function(...)
 		None: Option<any>,
 	}
 	
-end)()
-Modules["pid"] = (function(...)
+end
+Modules["pid"] = function(...)
 	--!native
 	
 	export type PID = {
@@ -2307,8 +2307,8 @@ Modules["pid"] = (function(...)
 		new = PID.new,
 	}
 	
-end)()
-Modules["quaternion"] = (function(...)
+end
+Modules["quaternion"] = function(...)
 	--!strict
 	
 	--[[
@@ -2880,8 +2880,8 @@ Modules["quaternion"] = (function(...)
 		identity = Quaternion.identity,
 	}
 	
-end)()
-Modules["query"] = (function(...)
+end
+Modules["query"] = function(...)
 	--!strict
 	
 	--[=[
@@ -3000,8 +3000,8 @@ Modules["query"] = (function(...)
 	
 	return Query
 	
-end)()
-Modules["sequent"] = (function(...)
+end
+Modules["sequent"] = function(...)
 	export type Sequent<T> = {
 		Fire: (self: Sequent<T>, T) -> (),
 		Connect: (self: Sequent<T>, callback: (SequentEvent<T>) -> ()) -> SequentConnection,
@@ -3343,8 +3343,8 @@ Modules["sequent"] = (function(...)
 		Priority = Priority,
 	})
 	
-end)()
-Modules["shake"] = (function(...)
+end
+Modules["shake"] = function(...)
 	--!native
 	
 	local RunService = game:GetService("RunService")
@@ -3878,8 +3878,8 @@ Modules["shake"] = (function(...)
 		NextRenderName = Shake.NextRenderName,
 	}
 	
-end)()
-Modules["signal"] = (function(...)
+end
+Modules["signal"] = function(...)
 	-- -----------------------------------------------------------------------------
 	--               Batched Yield-Safe Signal Implementation                     --
 	-- This is a Signal class which has effectively identical behavior to a       --
@@ -4313,8 +4313,8 @@ Modules["signal"] = (function(...)
 		Is = Signal.Is,
 	})
 	
-end)()
-Modules["spring"] = (function(...)
+end
+Modules["spring"] = function(...)
 	--!strict
 	
 	--[=[
@@ -4413,8 +4413,8 @@ Modules["spring"] = (function(...)
 	
 	return Spring
 	
-end)()
-Modules["stream"] = (function(...)
+end
+Modules["stream"] = function(...)
 	--!native
 	--!strict
 	
@@ -5013,8 +5013,8 @@ Modules["stream"] = (function(...)
 	
 	return table.freeze(stream)
 	
-end)()
-Modules["symbol"] = (function(...)
+end
+Modules["symbol"] = function(...)
 	-- Symbol
 	-- Stephen Leitnick
 	-- January 04, 2022
@@ -5072,8 +5072,8 @@ Modules["symbol"] = (function(...)
 	
 	return Symbol
 	
-end)()
-Modules["table-util"] = (function(...)
+end
+Modules["table-util"] = function(...)
 	--!strict
 	
 	-- TableUtil
@@ -6013,8 +6013,8 @@ Modules["table-util"] = (function(...)
 	
 	return TableUtil
 	
-end)()
-Modules["task-queue"] = (function(...)
+end
+Modules["task-queue"] = function(...)
 	-- TaskQueue
 	-- Stephen Leitnick
 	-- November 20, 2021
@@ -6113,8 +6113,8 @@ Modules["task-queue"] = (function(...)
 	
 	return TaskQueue
 	
-end)()
-Modules["tree"] = (function(...)
+end
+Modules["tree"] = function(...)
 	local DELIM = "/"
 	
 	local function FullNameToPath(instance: Instance): string
@@ -6253,8 +6253,8 @@ Modules["tree"] = (function(...)
 	
 	return Tree
 	
-end)()
-Modules["trove"] = (function(...)
+end
+Modules["trove"] = function(...)
 	--!strict
 	
 	local RunService = game:GetService("RunService")
@@ -7043,8 +7043,8 @@ Modules["trove"] = (function(...)
 		new = Trove.new,
 	}
 	
-end)()
-Modules["typed-remote"] = (function(...)
+end
+Modules["typed-remote"] = function(...)
 	--!strict
 	
 	type Signal<T...> = {
@@ -7239,6 +7239,6 @@ Modules["typed-remote"] = (function(...)
 	
 	return TypedRemote
 	
-end)()
+end
 
-return Modules
+return setmetatable({}, {__index = function(self, key) local f = Modules[key] if f then return f() end end})
