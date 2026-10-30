@@ -5,13 +5,11 @@
 	Esp.MergeDefaults(DEFAULT_SETTINGS)           -- before the settings store is created
 	hub.ESP = Esp.new(hub)                        -- registers "Player" for you
 	hub.ESP.Register({ Name = "Chest", Targets = function() return CollectionService:GetTagged("Chest") end })
-	hub.ESP.BuildTab("ESP")                       -- the controls, inside a tab you created
 	-- run hub.ESP.Enable(true) while hub.ESP.AnyOn() (a scheduler task does this); false cleans everything up
 
 	Host: the table handed to Esp.new
 	  Settings   the settings store: indexable
 	  Trove      root trove; Enable(false) is added to it
-	  app        the AuctusAPI WindUI app, only for BuildTab (read when BuildTab runs)
 
 	esp.Register(def)
 	  Name     string     unique; the on/off setting is "ESP<Name>", its color "ESP<Name>Color"
@@ -23,10 +21,9 @@
 
 	Styles (Settings.ESPStyle): "Classic" draws with the Drawing library (Line, Square, Name, Health, Bone),
 	"Highlight" uses Highlight instances. Every option is a setting listed in Esp.Defaults; to add one, add the
-	default, read it in draw() and add a line in BuildTab. Customise Esp.Defaults before use: every access of
+	default, read it in draw() and add a toggle for it in your ESP tab. Customise Esp.Defaults before use: every access of
 	Utility.esp is a fresh copy.
 
-	esp.BuildTab(tabId, options)   options: Id (prefix of the section ids, default "ESP"), Opened (default true)
 ]]
 
 local Players = game:GetService("Players")
@@ -275,7 +272,7 @@ function Esp.new(hub: any)
 		end
 	end
 
-	---Register something to draw; BuildTab gives it a toggle and a color.
+	---Register something to draw; your ESP tab gives it a toggle and a color.
 	function self.Register(def: any)
 		assert(
 			type(def) == "table" and type(def.Name) == "string" and type(def.Targets) == "function",
@@ -331,73 +328,6 @@ function Esp.new(hub: any)
 		holder = folder
 		connection = RunService.RenderStepped:Connect(step)
 		return true
-	end
-
-	---The controls: a Template section (a toggle and a color per registered target) and a Visual Setting section.
-	function self.BuildTab(tabId: string, options: { Id: string?, Opened: boolean? }?)
-		local app = hub.app
-		assert(app, "ESP.BuildTab: the hub has no app yet")
-		local id = options and options.Id or "ESP"
-		local opened = not (options and options.Opened == false)
-
-		app:Section(id .. "Template", tabId, { Title = "Template", Opened = opened })
-		for _, def in self.List do
-			local key = "ESP" .. def.Name
-			app:Toggle(key, id .. "Template", { Title = def.Title, Setting = key })
-			app:Colorpicker(key .. "Color", id .. "Template", {
-				Title = def.Title .. " Color",
-				Default = colorOf(key .. "Color", def.Color),
-				Callback = function(color)
-					Settings[key .. "Color"] = "#" .. color:ToHex() -- colors are not bindable: the picker writes the hex string
-				end,
-			})
-		end
-		app:Toggle("ESPSelf", id .. "Template", {
-			Title = "Show Myself",
-			Desc = "Players: test the style on your own character.",
-			Setting = "ESPSelf",
-		})
-
-		app:Section(id .. "Visual", tabId, { Title = "Visual Setting", Opened = opened })
-		local function option(key: string, title: string, desc: string?)
-			app:Toggle(key, id .. "Visual", { Title = title, Desc = desc, Setting = key })
-		end
-
-		app:Dropdown("ESPStyle", id .. "Visual", {
-			Title = "Style",
-			Desc = "Each style has its own options below.",
-			Values = { "Classic", "Highlight" },
-			Value = Settings.ESPStyle,
-			Setting = "ESPStyle",
-		})
-		option("ESPTeamCheck", "Team Check", "Players: skip your team.")
-		app:Slider("ESPMaxDistance", id .. "Visual", {
-			Title = "Max Distance",
-			Value = { Min = 100, Max = 5000, Default = 1500 },
-			Setting = "ESPMaxDistance",
-		})
-
-		option("ESPClassicLine", "Classic: Line", "Line from the bottom of the screen.")
-		option("ESPClassicSquare", "Classic: Square", "Box around the target.")
-		option("ESPClassicName", "Classic: Name")
-		option("ESPClassicHealth", "Classic: Health", "Health bar beside the box (targets with a Humanoid).")
-		option("ESPClassicBone", "Classic: Bone", "Skeleton lines (targets with a Humanoid).")
-
-		app:Colorpicker("ESPHighlightOutline", id .. "Visual", {
-			Title = "Highlight: Outline Color",
-			Default = colorOf("ESPHighlightOutline"),
-			Callback = function(color)
-				Settings.ESPHighlightOutline = "#" .. color:ToHex()
-			end,
-		})
-		option("ESPHighlightFilled", "Highlight: Fill", "Filled with the target's color.")
-		option("ESPHighlightOutlined", "Highlight: Outline")
-		app:Slider("ESPHighlightOpacity", id .. "Visual", {
-			Title = "Highlight: Fill Opacity",
-			Value = { Min = 0, Max = 100, Default = 50 },
-			Setting = "ESPHighlightOpacity",
-		})
-		option("ESPHighlightName", "Highlight: Name")
 	end
 
 	hub.Trove:Add(function()
