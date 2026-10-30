@@ -8956,7 +8956,7 @@ Modules["esp"] = function(...)
 	
 		local Esp = Utility.esp
 		Esp.MergeDefaults(DEFAULT_SETTINGS)           -- before the settings store is created
-		hub.ESP = Esp.new(hub)                        -- registers "Player" for you
+		hub.ESP = Esp.new(hub)
 		hub.ESP.Register({ Name = "Chest", Targets = function() return CollectionService:GetTagged("Chest") end })
 		-- run hub.ESP.Enable(true) while hub.ESP.AnyOn() (a scheduler task does this); false cleans everything up
 	
@@ -8979,15 +8979,12 @@ Modules["esp"] = function(...)
 	
 	]]
 	
-	local Players = game:GetService("Players")
 	local RunService = game:GetService("RunService")
 	
 	local Esp = {}
 	
 	Esp.Defaults = {
-		ESPSelf = false, -- Player: test the style on your own character
 		ESPStyle = "Classic",
-		ESPTeamCheck = false,
 		ESPMaxDistance = 1500,
 		ESPClassicLine = false,
 		ESPClassicSquare = true,
@@ -9037,7 +9034,6 @@ Modules["esp"] = function(...)
 	function Esp.new(hub: any)
 		assert(type(hub) == "table" and hub.Settings and hub.Trove, "Esp.new(hub): the hub needs Settings and Trove")
 		local Settings = hub.Settings
-		local localPlayer = Players.LocalPlayer
 	
 		local self = { List = {} :: { any } } -- the registered targets, in order
 		local connection: RBXScriptConnection? = nil
@@ -9286,27 +9282,6 @@ Modules["esp"] = function(...)
 		hub.Trove:Add(function()
 			self.Enable(false)
 		end)
-	
-		self.Register({
-			Name = "Player",
-			Title = "Players",
-			Refresh = 0.25,
-			Targets = function()
-				local list = {}
-				for _, player in Players:GetPlayers() do
-					local mine = player == localPlayer
-					local friend = player.Team ~= nil and player.Team == localPlayer.Team
-					if player.Character and (not mine or Settings.ESPSelf) and not (Settings.ESPTeamCheck and friend and not mine) then
-						table.insert(list, player.Character)
-					end
-				end
-				return list
-			end,
-			Label = function(character)
-				local player = Players:GetPlayerFromCharacter(character)
-				return if player then player.DisplayName else character.Name
-			end,
-		})
 	
 		return self
 	end
